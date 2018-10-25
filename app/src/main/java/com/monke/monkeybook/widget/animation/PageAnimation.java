@@ -25,9 +25,6 @@ public abstract class PageAnimation {
     //移动方向
     protected Direction mDirection = Direction.NONE;
 
-    protected boolean isRunning = false;
-    private boolean startAnim = false;
-
     //屏幕的尺寸
     protected int mScreenWidth;
     protected int mScreenHeight;
@@ -48,11 +45,14 @@ public abstract class PageAnimation {
     protected float mLastX;
     protected float mLastY;
 
-    public PageAnimation(int w, int h, View view, OnPageChangeListener listener){
-        this(w, h, 0, 0, 0, view,listener);
+    protected boolean isRunning = false;
+    protected boolean changePage = false;
+
+    public PageAnimation(int w, int h, View view, OnPageChangeListener listener) {
+        this(w, h, 0, 0, 0, view, listener);
     }
 
-    public PageAnimation(int w, int h, int marginWidth, int marginTop, int marginBottom, View view, OnPageChangeListener listener){
+    public PageAnimation(int w, int h, int marginWidth, int marginTop, int marginBottom, View view, OnPageChangeListener listener) {
         mScreenWidth = w;
         mScreenHeight = h;
 
@@ -73,7 +73,7 @@ public abstract class PageAnimation {
         return mScroller;
     }
 
-    public void setStartPoint(float x, float y){
+    public void setStartPoint(float x, float y) {
         mStartX = x;
         mStartY = y;
 
@@ -81,7 +81,7 @@ public abstract class PageAnimation {
         mLastY = mStartY;
     }
 
-    public void setTouchPoint(float x,float y){
+    public void setTouchPoint(float x, float y) {
         mLastX = mTouchX;
         mLastY = mTouchY;
 
@@ -89,36 +89,35 @@ public abstract class PageAnimation {
         mTouchY = y;
     }
 
-    public boolean isRunning(){
+    public boolean isRunning() {
         return isRunning;
     }
 
-    public boolean isStartAnim() {
-        return startAnim;
+    public boolean isChangePage() {
+        return changePage;
     }
 
-    public void setStartAnim(boolean startAnim) {
-        this.startAnim = startAnim;
+    public void setChangePage(boolean changePage) {
+        this.changePage = changePage;
     }
 
     /**
      * 开启翻页动画
      */
-    public void startAnim(){
-        startAnim = true;
+    public void startAnim() {
         isRunning = true;
         mView.postInvalidate();
     }
 
-    public void setDirection(Direction direction){
-        mDirection = direction;
-    }
-
-    public Direction getDirection(){
+    public Direction getDirection() {
         return mDirection;
     }
 
-    public void clear(){
+    public void setDirection(Direction direction) {
+        mDirection = direction;
+    }
+
+    public void clear() {
         mView = null;
     }
 
@@ -143,18 +142,22 @@ public abstract class PageAnimation {
      */
     public abstract void abortAnim();
 
+    public abstract void changePageEnd();
+
     /**
      * 获取背景板
+     * pageOnCur: 位于当前页的位置, 小于0上一页, 0 当前页, 大于0下一页
      */
-    public abstract Bitmap getBgBitmap();
+    public abstract Bitmap getBgBitmap(int pageOnCur);
 
     /**
      * 获取内容显示版面
+     * pageOnCur: 位于当前页的位置, 小于0上一页, 0 当前页, 大于0下一页
      */
-    public abstract Bitmap getNextBitmap();
+    public abstract Bitmap getContentBitmap(int pageOnCur);
 
     public enum Direction {
-        NONE(true),NEXT(true), PRE(true), UP(false), DOWN(false);
+        NONE(true), NEXT(true), PRE(true), UP(false), DOWN(false);
 
         public final boolean isHorizontal;
 
@@ -164,9 +167,17 @@ public abstract class PageAnimation {
     }
 
     public interface OnPageChangeListener {
+        void changePage(Direction direction);
+
         boolean hasPrev();
+
         boolean hasNext();
+
         void pageCancel();
+
+        void autoNextPage();
+
+        void autoPrevPage();
     }
 
 }

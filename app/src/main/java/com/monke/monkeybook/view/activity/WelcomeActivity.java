@@ -4,12 +4,12 @@ package com.monke.monkeybook.view.activity;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
-import android.os.Bundle;
 import android.widget.ImageView;
 
 import com.monke.basemvplib.impl.IPresenter;
 import com.monke.monkeybook.R;
 import com.monke.monkeybook.base.MBaseActivity;
+import com.monke.monkeybook.dao.DbHelper;
 import com.monke.monkeybook.presenter.ReadBookPresenterImpl;
 
 import butterknife.BindView;
@@ -28,12 +28,21 @@ public class WelcomeActivity extends MBaseActivity {
     @Override
     protected void onCreateActivity() {
         // 避免从桌面启动程序后，会重新实例化入口类的activity
-        if((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0){
+        if((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
             finish();
             return;
         }
         setContentView(R.layout.activity_welcome);
+
+        new Thread(() -> {
+            try {
+                DbHelper.getInstance().getmDaoSession();
+            } catch (Exception e) {
+            }
+        }).start();
+
         ButterKnife.bind(this);
+
         ValueAnimator welAnimator = ValueAnimator.ofFloat(1f, 0f).setDuration(800);
         welAnimator.setStartDelay(500);
         welAnimator.addUpdateListener(animation -> {

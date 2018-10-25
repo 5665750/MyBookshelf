@@ -23,7 +23,7 @@ public class FontSelector {
     private AlertDialog alertDialog;
 
     public FontSelector(Context context, String selectPath) {
-        builder = new AlertDialog.Builder(context);
+        builder = new AlertDialog.Builder(context, R.style.alertDialogTheme);
         @SuppressLint("InflateParams") View view = LayoutInflater.from(context).inflate(R.layout.view_recycler_font, null);
         RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
         builder.setView(view);
@@ -79,7 +79,7 @@ public class FontSelector {
         try {
             DocumentHelper.createDirIfNotExist(fontPath);
             File file = new File(fontPath);
-            return file.listFiles(pathName -> pathName.getName().endsWith(".TTF") || pathName.getName().endsWith(".ttf"));
+            return file.listFiles(pathName -> pathName.getName().toLowerCase().matches(".*\\.[ot]tf"));
         } catch (Exception e) {
             return null;
         }

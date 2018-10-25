@@ -2,10 +2,10 @@ package com.monke.monkeybook.widget.page;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
-import android.support.design.widget.Snackbar;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,6 +13,7 @@ import android.view.ViewConfiguration;
 
 import com.monke.monkeybook.bean.BookShelfBean;
 import com.monke.monkeybook.help.ReadBookControl;
+import com.monke.monkeybook.utils.ScreenUtils;
 import com.monke.monkeybook.utils.barUtil.ImmersionBar;
 import com.monke.monkeybook.view.activity.ReadBookActivity;
 import com.monke.monkeybook.widget.animation.CoverPageAnim;
@@ -42,6 +43,7 @@ public class PageView extends View {
     private int mStartX = 0;
     private int mStartY = 0;
     private boolean isMove = false;
+    private boolean actionFromEdge = false;
     private int mPageIndex;
     private int mChapterIndex;
     // 初始化参数
@@ -53,8 +55,17 @@ public class PageView extends View {
     private boolean isPrepare;
     // 动画类
     private PageAnimation mPageAnim;
+    //点击监听
+    private TouchListener mTouchListener;
+    //内容加载器
+    private PageLoader mPageLoader;
     // 动画监听类
     private PageAnimation.OnPageChangeListener mPageAnimListener = new PageAnimation.OnPageChangeListener() {
+        @Override
+        public void changePage(PageAnimation.Direction direction) {
+//            mPageLoader.pagingEnd(direction);
+        }
+
         @Override
         public boolean hasPrev() {
             return PageView.this.hasPrevPage();
@@ -69,12 +80,17 @@ public class PageView extends View {
         public void pageCancel() {
             PageView.this.pageCancel();
         }
-    };
 
-    //点击监听
-    private TouchListener mTouchListener;
-    //内容加载器
-    private PageLoader mPageLoader;
+        @Override
+        public void autoNextPage() {
+            autoNextPage();
+        }
+
+        @Override
+        public void autoPrevPage() {
+            autoPrevPage();
+        }
+    };
 
     public PageView(Context context) {
         this(context, null);
@@ -138,19 +154,23 @@ public class PageView extends View {
         return statusBarHeight;
     }
 
-    public Bitmap getNextBitmap() {
+    public Bitmap getContentBitmap(int pageOnCur) {
         if (mPageAnim == null) return null;
-        return mPageAnim.getNextBitmap();
+        return mPageAnim.getContentBitmap(pageOnCur);
     }
 
-    public Bitmap getBgBitmap() {
+    public Bitmap getBgBitmap(int pageOnCur) {
         if (mPageAnim == null) return null;
-        return mPageAnim.getBgBitmap();
+        return mPageAnim.getBgBitmap(pageOnCur);
     }
 
     public boolean autoPrevPage() {
-        //滚动暂时不支持自动翻页
         if (mPageAnim instanceof ScrollPageAnim) {
+            if (hasPrevPage()) {
+                resetScroll();
+                drawCurPage();
+                return true;
+            }
             return false;
         } else {
             startPageAnim(PageAnimation.Direction.PRE);
@@ -160,11 +180,12 @@ public class PageView extends View {
 
     public boolean autoNextPage() {
         if (mPageAnim instanceof ScrollPageAnim) {
-            if (mPageLoader.getPagePos() < mPageLoader.getPageSize() - 1) {
-                mPageLoader.skipToPage(mPageLoader.getPagePos() + 1);
+            if (hasNextPage()) {
+                resetScroll();
+                drawCurPage();
                 return true;
             }
-            return mPageLoader.skipNextChapter();
+            return false;
         } else {
             startPageAnim(PageAnimation.Direction.NEXT);
             return true;
@@ -227,10 +248,20 @@ public class PageView extends View {
             return true;
         }
 
+        if (actionFromEdge) {
+            if (event.getAction() == MotionEvent.ACTION_UP)
+                actionFromEdge = false;
+            return true;
+        }
+
         int x = (int) event.getX();
         int y = (int) event.getY();
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                if (event.getEdgeFlags() != 0 || event.getRawY() < ScreenUtils.dpToPx(20) || event.getRawY() > Resources.getSystem().getDisplayMetrics().heightPixels - ScreenUtils.dpToPx(20)) {
+                    actionFromEdge = true;
+                    return true;
+                }
                 mStartX = x;
                 mStartY = y;
                 isMove = false;
@@ -282,7 +313,7 @@ public class PageView extends View {
         if (mPageLoader.prev()) {
             return true;
         } else {
-            Snackbar.make(this, "没有上一页", Snackbar.LENGTH_SHORT).show();
+            activity.showSnackBar(this,"没有上一页");
             return false;
         }
     }
@@ -294,7 +325,7 @@ public class PageView extends View {
         if (mPageLoader.next()) {
             return true;
         } else {
-            Snackbar.make(this, "没有下一页", Snackbar.LENGTH_SHORT).show();
+            activity.showSnackBar(this, "没有下一页");
             return false;
         }
     }
@@ -308,11 +339,10 @@ public class PageView extends View {
         //进行滑动
         if (mPageAnim != null) {
             mPageAnim.scrollAnim();
-            if (mPageAnim.isStartAnim() && !mPageAnim.getScroller().computeScrollOffset()) {
-                mPageAnim.setStartAnim(false);
-                if (mPageLoader.getPagePos() != mPageIndex | mPageLoader.getChapterPos() != mChapterIndex) {
-                    mPageLoader.pagingEnd();
-                }
+            if (mPageAnim.isChangePage() && !mPageAnim.getScroller().computeScrollOffset()) {
+                mPageAnim.changePageEnd();
+                mPageLoader.pagingEnd(mPageAnim.getDirection());
+                mPageAnim.setDirection(PageAnimation.Direction.NONE);
             }
         }
         super.computeScroll();
@@ -351,15 +381,11 @@ public class PageView extends View {
     }
 
     /**
-     * 绘制下一页
+     * 绘制上一页
      */
-    public void drawNextPage() {
+    public void drawPrevPage() {
         if (!isPrepare) return;
-
-        if (mPageAnim instanceof HorizonPageAnim) {
-            ((HorizonPageAnim) mPageAnim).changePage();
-        }
-        mPageLoader.drawPage(getNextBitmap());
+        mPageLoader.drawPage(getBgBitmap(-1), getContentBitmap(-1), -1);
     }
 
     /**
@@ -369,8 +395,22 @@ public class PageView extends View {
         if (!isPrepare) return;
 
         if (mPageLoader != null) {
-            mPageLoader.drawPage(getNextBitmap());
+            mPageLoader.drawPage(getBgBitmap(0), getContentBitmap(0), 0);
+            mPageAnim.setChangePage(true);
+            invalidate();
         }
+    }
+
+    /**
+     * 绘制下一页
+     */
+    public void drawNextPage() {
+        if (!isPrepare) return;
+
+//        if (mPageAnim instanceof HorizonPageAnim) {
+//            ((HorizonPageAnim) mPageAnim).changePage();
+//        }
+        mPageLoader.drawPage(getBgBitmap(1), getContentBitmap(1), 1);
     }
 
     @Override

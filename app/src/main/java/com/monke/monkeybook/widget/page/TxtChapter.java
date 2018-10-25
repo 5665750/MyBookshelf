@@ -1,70 +1,53 @@
 package com.monke.monkeybook.widget.page;
 
+import java.util.List;
+
 /**
- * Created by newbiechen on 17-7-1.
+ * 章节
  */
 
-public class TxtChapter{
+class TxtChapter {
+    private int position;
+    private List<TxtPage> txtPageList;
+    private int status;
 
-    //章节所属的小说(网络)
-    String bookId;
-    //章节的链接(网络)
-    String link;
-
-    //章节名(共用)
-    String title;
-
-    //章节内容在文章中的起始位置(本地)
-    long start;
-    //章节内容在文章中的终止位置(本地)
-    long end;
-
-    public String getBookId() {
-        return bookId;
+    TxtChapter(int position) {
+        this.position = position;
     }
 
-    public void setBookId(String id) {
-        this.bookId = id;
+    TxtChapter(int position, List<TxtPage> txtPageList) {
+        this.position = position;
+        this.txtPageList = txtPageList;
     }
 
-    public String getLink() {
-        return link;
+    public int getPosition() {
+        return position;
     }
 
-    public void setLink(String link) {
-        this.link = link;
+    public void setTxtPageList(List<TxtPage> txtPageList) {
+        this.txtPageList = txtPageList;
     }
 
-    public String getTitle() {
-        return title;
+    public List<TxtPage> getTxtPageList() {
+        return txtPageList;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public int getPageSize() {
+        return txtPageList != null ? txtPageList.size() : 0;
     }
 
-    public long getStart() {
-        return start;
+    public TxtPage getPage(int page) {
+        if (txtPageList != null) {
+            return txtPageList.get(Math.max(0, Math.min(page, txtPageList.size() - 1)));
+        }
+        return null;
     }
 
-    public void setStart(long start) {
-        this.start = start;
+    public int getStatus() {
+        return status;
     }
 
-    public long getEnd() {
-        return end;
-    }
-
-    public void setEnd(long end) {
-        this.end = end;
-    }
-
-    @Override
-    public String toString() {
-        return "TxtChapter{" +
-                "title='" + title + '\'' +
-                ", start=" + start +
-                ", end=" + end +
-                '}';
+    public void setStatus(int mStatus) {
+        this.status = mStatus;
     }
 }

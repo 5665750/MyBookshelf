@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.monke.monkeybook.MApplication;
 import com.monke.monkeybook.R;
@@ -71,19 +70,6 @@ public class ReadInterfacePop extends PopupWindow {
 
     private ReadBookActivity activity;
     private ReadBookControl readBookControl = ReadBookControl.getInstance();
-
-    public interface OnChangeProListener {
-        void upPageMode();
-
-        void upTextSize();
-
-        void upMargin();
-
-        void bgChange();
-
-        void refresh();
-    }
-
     private OnChangeProListener changeProListener;
 
     public ReadInterfacePop(ReadBookActivity readBookActivity, @NonNull OnChangeProListener changeProListener) {
@@ -188,7 +174,7 @@ public class ReadInterfacePop extends PopupWindow {
     private void bindEvent() {
         //翻页模式
         tvPageMode.setOnClickListener(view -> {
-            AlertDialog dialog = new AlertDialog.Builder(activity)
+            AlertDialog dialog = new AlertDialog.Builder(activity, R.style.alertDialogTheme)
                     .setTitle(activity.getString(R.string.page_mode))
                     .setSingleChoiceItems(activity.getResources().getStringArray(R.array.page_mode), readBookControl.getPageMode(), (dialogInterface, i) -> {
                         readBookControl.setPageMode(i);
@@ -258,7 +244,7 @@ public class ReadInterfacePop extends PopupWindow {
         //长按清除字体
         fl_text_font.setOnLongClickListener(view -> {
             clearFontPath();
-            Toast.makeText(activity, R.string.clear_font, Toast.LENGTH_SHORT).show();
+            activity.toast(R.string.clear_font);
             return true;
         });
 
@@ -329,6 +315,18 @@ public class ReadInterfacePop extends PopupWindow {
                 break;
         }
         readBookControl.setTextDrawableIndex(index);
+    }
+
+    public interface OnChangeProListener {
+        void upPageMode();
+
+        void upTextSize();
+
+        void upMargin();
+
+        void bgChange();
+
+        void refresh();
     }
 
 }

@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -106,9 +108,6 @@ public class BookShelfListAdapter extends RecyclerView.Adapter<BookShelfListAdap
         } else {
             holder.flContent.setVisibility(View.VISIBLE);
         }
-        holder.ibContent.setContentDescription(String.format("%s, 最新章节: %s",
-                books.get(index).getBookInfoBean().getName(),
-                books.get(index).getLastChapterName()));
         if (!activity.isFinishing()) {
             if (TextUtils.isEmpty(books.get(index).getCustomCoverPath())) {
                 Glide.with(activity).load(books.get(index).getBookInfoBean().getCoverUrl())
@@ -125,7 +124,7 @@ public class BookShelfListAdapter extends RecyclerView.Adapter<BookShelfListAdap
             }
         }
         if (!TextUtils.isEmpty(books.get(index).getBookInfoBean().getAuthor())) {
-            holder.tvName.setText(String.format("%s(%s)", books.get(index).getBookInfoBean().getName(), books.get(index).getBookInfoBean().getAuthor()));
+            holder.tvName.setText(String.format("%s (%s)", books.get(index).getBookInfoBean().getName(), books.get(index).getBookInfoBean().getAuthor()));
         } else {
             holder.tvName.setText(books.get(index).getBookInfoBean().getName());
         }
@@ -148,22 +147,22 @@ public class BookShelfListAdapter extends RecyclerView.Adapter<BookShelfListAdap
         } else {
             holder.mpbDurProgress.setDurProgress(books.get(index).getDurChapter() + 1);
         }
-        holder.ibCover.setOnClickListener(v -> {
+        holder.ivCover.setOnClickListener(v -> {
             if (itemClickListener != null)
                 itemClickListener.onClick(v, index);
         });
-        holder.ibCover.setOnLongClickListener(v -> {
+        holder.ivCover.setOnLongClickListener(v -> {
             if (itemClickListener != null) {
                 itemClickListener.onLongClick(v, index);
             }
             return true;
         });
-        holder.ibContent.setOnClickListener(v -> {
+        holder.flContent.setOnClickListener(v -> {
             if (itemClickListener != null)
                 itemClickListener.onClick(v, index);
         });
         if (!Objects.equals(bookshelfPx, "2")) {
-            holder.ibContent.setOnLongClickListener(v -> {
+            holder.flContent.setOnLongClickListener(v -> {
                 if (itemClickListener != null) {
                     itemClickListener.onLongClick(v, index);
                 }
@@ -206,29 +205,27 @@ public class BookShelfListAdapter extends RecyclerView.Adapter<BookShelfListAdap
     }
 
     class MyViewHolder extends RecyclerView.ViewHolder {
-        FrameLayout flContent;
+        RelativeLayout flContent;
         ImageView ivCover;
         ImageView ivHasNew;
         AutofitTextView tvName;
         AutofitTextView tvRead;
         AutofitTextView tvLast;
-        MHorProgressBar mpbDurProgress;
-        ImageButton ibContent;
-        ImageButton ibCover;
+        View ibContent;
         RotateLoading rotateLoading;
+        MHorProgressBar mpbDurProgress;
 
         MyViewHolder(View itemView) {
             super(itemView);
-            flContent = itemView.findViewById(R.id.fl_content);
+            flContent = itemView.findViewById(R.id.cv_content);
             ivCover = itemView.findViewById(R.id.iv_cover);
             ivHasNew = itemView.findViewById(R.id.iv_has_new);
             tvName = itemView.findViewById(R.id.tv_name);
             tvRead = itemView.findViewById(R.id.tv_read);
             tvLast = itemView.findViewById(R.id.tv_last);
-            mpbDurProgress = itemView.findViewById(R.id.mpb_durProgress);
             ibContent = itemView.findViewById(R.id.ib_content);
-            ibCover = itemView.findViewById(R.id.ib_cover);
             rotateLoading = itemView.findViewById(R.id.rl_loading);
+            mpbDurProgress = itemView.findViewById(R.id.mpb_durProgress);
         }
     }
 

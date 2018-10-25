@@ -7,17 +7,16 @@ import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.AppCompatEditText;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,12 +24,12 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.monke.monkeybook.BitIntentDataManager;
 import com.monke.monkeybook.BuildConfig;
-import com.monke.monkeybook.MApplication;
 import com.monke.monkeybook.R;
 import com.monke.monkeybook.base.MBaseActivity;
 import com.monke.monkeybook.bean.BookSourceBean;
 import com.monke.monkeybook.presenter.SourceEditPresenterImpl;
 import com.monke.monkeybook.presenter.contract.SourceEditContract;
+import com.monke.monkeybook.utils.SoftInputUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -53,103 +52,103 @@ public class SourceEditActivity extends MBaseActivity<SourceEditContract.Present
     @BindView(R.id.ll_content)
     LinearLayout llContent;
     @BindView(R.id.tie_book_source_url)
-    TextInputEditText tieBookSourceUrl;
+    AppCompatEditText tieBookSourceUrl;
     @BindView(R.id.til_book_source_url)
     TextInputLayout tilBookSourceUrl;
     @BindView(R.id.tie_book_source_name)
-    TextInputEditText tieBookSourceName;
+    AppCompatEditText tieBookSourceName;
     @BindView(R.id.til_book_source_name)
     TextInputLayout tilBookSourceName;
     @BindView(R.id.tie_ruleSearchUrl)
-    TextInputEditText tieRuleSearchUrl;
+    AppCompatEditText tieRuleSearchUrl;
     @BindView(R.id.til_ruleSearchUrl)
     TextInputLayout tilRuleSearchUrl;
     @BindView(R.id.tie_ruleSearchList)
-    TextInputEditText tieRuleSearchList;
+    AppCompatEditText tieRuleSearchList;
     @BindView(R.id.til_ruleSearchList)
     TextInputLayout tilRuleSearchList;
     @BindView(R.id.tie_ruleSearchName)
-    TextInputEditText tieRuleSearchName;
+    AppCompatEditText tieRuleSearchName;
     @BindView(R.id.til_ruleSearchName)
     TextInputLayout tilRuleSearchName;
     @BindView(R.id.tie_ruleSearchAuthor)
-    TextInputEditText tieRuleSearchAuthor;
+    AppCompatEditText tieRuleSearchAuthor;
     @BindView(R.id.til_ruleSearchAuthor)
     TextInputLayout tilRuleSearchAuthor;
     @BindView(R.id.tie_ruleSearchKind)
-    TextInputEditText tieRuleSearchKind;
+    AppCompatEditText tieRuleSearchKind;
     @BindView(R.id.til_ruleSearchKind)
     TextInputLayout tilRuleSearchKind;
     @BindView(R.id.tie_ruleSearchLastChapter)
-    TextInputEditText tieRuleSearchLastChapter;
+    AppCompatEditText tieRuleSearchLastChapter;
     @BindView(R.id.til_ruleSearchLastChapter)
     TextInputLayout tilRuleSearchLastChapter;
     @BindView(R.id.tie_ruleSearchCoverUrl)
-    TextInputEditText tieRuleSearchCoverUrl;
+    AppCompatEditText tieRuleSearchCoverUrl;
     @BindView(R.id.til_ruleSearchCoverUrl)
     TextInputLayout tilRuleSearchCoverUrl;
     @BindView(R.id.tie_ruleSearchNoteUrl)
-    TextInputEditText tieRuleSearchNoteUrl;
+    AppCompatEditText tieRuleSearchNoteUrl;
     @BindView(R.id.til_ruleSearchNoteUrl)
     TextInputLayout tilRuleSearchNoteUrl;
     @BindView(R.id.tie_ruleBookName)
-    TextInputEditText tieRuleBookName;
+    AppCompatEditText tieRuleBookName;
     @BindView(R.id.til_ruleBookName)
     TextInputLayout tilRuleBookName;
     @BindView(R.id.tie_ruleBookAuthor)
-    TextInputEditText tieRuleBookAuthor;
+    AppCompatEditText tieRuleBookAuthor;
     @BindView(R.id.til_ruleBookAuthor)
     TextInputLayout tilRuleBookAuthor;
     @BindView(R.id.tie_ruleCoverUrl)
-    TextInputEditText tieRuleCoverUrl;
+    AppCompatEditText tieRuleCoverUrl;
     @BindView(R.id.til_ruleCoverUrl)
     TextInputLayout tilRuleCoverUrl;
     @BindView(R.id.tie_ruleChapterUrl)
-    TextInputEditText tieRuleChapterUrl;
+    AppCompatEditText tieRuleChapterUrl;
     @BindView(R.id.til_ruleChapterUrl)
     TextInputLayout tilRuleChapterUrl;
     @BindView(R.id.tie_ruleIntroduce)
-    TextInputEditText tieRuleIntroduce;
+    AppCompatEditText tieRuleIntroduce;
     @BindView(R.id.til_ruleIntroduce)
     TextInputLayout tilRuleIntroduce;
     @BindView(R.id.tie_ruleChapterList)
-    TextInputEditText tieRuleChapterList;
+    AppCompatEditText tieRuleChapterList;
     @BindView(R.id.til_ruleChapterList)
     TextInputLayout tilRuleChapterList;
     @BindView(R.id.tie_ruleChapterName)
-    TextInputEditText tieRuleChapterName;
+    AppCompatEditText tieRuleChapterName;
     @BindView(R.id.til_ruleChapterName)
     TextInputLayout tilRuleChapterName;
     @BindView(R.id.tie_ruleContentUrl)
-    TextInputEditText tieRuleContentUrl;
+    AppCompatEditText tieRuleContentUrl;
     @BindView(R.id.til_ruleContentUrl)
     TextInputLayout tilRuleContentUrl;
     @BindView(R.id.tie_ruleBookContent)
-    TextInputEditText tieRuleBookContent;
+    AppCompatEditText tieRuleBookContent;
     @BindView(R.id.til_ruleBookContent)
     TextInputLayout tilRuleBookContent;
     @BindView(R.id.tie_httpUserAgent)
-    TextInputEditText tieHttpUserAgent;
+    AppCompatEditText tieHttpUserAgent;
     @BindView(R.id.til_httpUserAgent)
     TextInputLayout tilHttpUserAgent;
     @BindView(R.id.tie_ruleFindUrl)
-    TextInputEditText tieRuleFindUrl;
+    AppCompatEditText tieRuleFindUrl;
     @BindView(R.id.til_ruleFindUrl)
     TextInputLayout tilRuleFindUrl;
     @BindView(R.id.tie_bookSourceGroup)
-    TextInputEditText tieBookSourceGroup;
+    AppCompatEditText tieBookSourceGroup;
     @BindView(R.id.til_bookSourceGroup)
     TextInputLayout tilBookSourceGroup;
     @BindView(R.id.tie_checkUrl)
-    TextInputEditText tieCheckUrl;
+    AppCompatEditText tieCheckUrl;
     @BindView(R.id.til_checkUrl)
     TextInputLayout tilCheckUrl;
     @BindView(R.id.tie_ruleChapterUrlNext)
-    TextInputEditText tieRuleChapterUrlNext;
+    AppCompatEditText tieRuleChapterUrlNext;
     @BindView(R.id.til_ruleChapterUrlNext)
     TextInputLayout tilRuleChapterUrlNext;
     @BindView(R.id.tie_ruleContentUrlNext)
-    TextInputEditText tieRuleContentUrlNext;
+    AppCompatEditText tieRuleContentUrlNext;
     @BindView(R.id.til_ruleContentUrlNext)
     TextInputLayout tilRuleContentUrlNext;
 
@@ -215,7 +214,7 @@ public class SourceEditActivity extends MBaseActivity<SourceEditContract.Present
 
     private void saveBookSource() {
         if (isEmpty(tieBookSourceName.getText().toString().trim()) || isEmpty(tieBookSourceUrl.getText().toString().trim())) {
-            Toast.makeText(MApplication.getInstance(), "书源名称和URL不能为空", Toast.LENGTH_SHORT).show();
+            toast("书源名称和URL不能为空", ERROR);
             return;
         }
         mPresenter.saveSource(getBookSource(), bookSourceBean);
@@ -224,7 +223,7 @@ public class SourceEditActivity extends MBaseActivity<SourceEditContract.Present
     @Override
     public void saveSuccess() {
         bookSourceBean = getBookSource();
-        Toast.makeText(MApplication.getInstance(), "保存成功", Toast.LENGTH_SHORT).show();
+        toast("保存成功");
         setResult(RESULT_OK);
         finish();
     }
@@ -379,7 +378,7 @@ public class SourceEditActivity extends MBaseActivity<SourceEditContract.Present
             startActivity(intent);
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, R.string.can_not_open, Toast.LENGTH_SHORT).show();
+            toast(R.string.can_not_open, ERROR);
         }
     }
 
@@ -426,6 +425,7 @@ public class SourceEditActivity extends MBaseActivity<SourceEditContract.Present
                 openRuleSummary();
                 break;
             case android.R.id.home:
+                SoftInputUtil.hideIMM(this, getCurrentFocus());
                 finish();
                 break;
         }

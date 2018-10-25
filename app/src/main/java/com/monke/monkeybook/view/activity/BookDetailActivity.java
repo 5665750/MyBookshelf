@@ -1,6 +1,7 @@
 //Copyright (c) 2017. 章钦豪. All rights reserved.
 package com.monke.monkeybook.view.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -14,6 +15,8 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.RotateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -24,7 +27,9 @@ import com.monke.basemvplib.AppActivityManager;
 import com.monke.monkeybook.BitIntentDataManager;
 import com.monke.monkeybook.R;
 import com.monke.monkeybook.base.MBaseActivity;
-import com.monke.monkeybook.help.BookshelfHelp;
+import com.monke.monkeybook.bean.BookInfoBean;
+import com.monke.monkeybook.bean.BookShelfBean;
+import com.monke.monkeybook.bean.SearchBookBean;
 import com.monke.monkeybook.help.RxBusTag;
 import com.monke.monkeybook.presenter.BookDetailPresenterImpl;
 import com.monke.monkeybook.presenter.ReadBookPresenterImpl;
@@ -35,6 +40,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import jp.wasabeef.glide.transformations.BlurTransformation;
 
+import static com.monke.monkeybook.help.Constant.BOOK_GROUPS;
 import static com.monke.monkeybook.presenter.BookDetailPresenterImpl.FROM_BOOKSHELF;
 
 public class BookDetailActivity extends MBaseActivity<BookDetailContract.Presenter> implements BookDetailContract.View {
@@ -48,8 +54,12 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
     TextView tvName;
     @BindView(R.id.tv_author)
     TextView tvAuthor;
+    @BindView(R.id.tv_update)
+    TextView tvUpdate;
     @BindView(R.id.tv_origin)
     TextView tvOrigin;
+    @BindView(R.id.iv_web)
+    ImageView ivWeb;
     @BindView(R.id.tv_chapter)
     TextView tvChapter;
     @BindView(R.id.tv_intro)
@@ -64,12 +74,19 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
     ImageView ivRefresh;
     @BindView(R.id.tv_change_origin)
     TextView tvChangeOrigin;
-    @BindView(R.id.tv_group)
-    TextView tvGroup;
+    @BindView(R.id.rg_book_group)
+    RadioGroup rgBookGroup;
+    @BindView(R.id.tv_chapter_size)
+    TextView tvChapterSize;
+    @BindView(R.id.rb_zdy)
+    RadioButton rbZdy;
 
     private Animation animHideLoading;
     private Animation animShowInfo;
     private MoProgressHUD moProgressHUD;
+    private String author;
+    private BookShelfBean bookShelfBean;
+    private String coverUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,20 +140,28 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
 
     @Override
     public void updateView() {
-        if (null != mPresenter.getBookShelf()) {
-            tvName.setText(mPresenter.getBookShelf().getBookInfoBean().getName());
-            tvAuthor.setText(mPresenter.getBookShelf().getBookInfoBean().getAuthor());
-            tvGroup.setText(BookshelfHelp.getGroupName(this, mPresenter.getBookShelf().getGroup()));
+        bookShelfBean = mPresenter.getBookShelf();
+        BookInfoBean bookInfoBean;
+        if (null != bookShelfBean) {
+            bookInfoBean = bookShelfBean.getBookInfoBean();
+            tvName.setText(bookInfoBean.getName());
+            author = bookInfoBean.getAuthor();
+            tvAuthor.setText(TextUtils.isEmpty(author) ? "未知" : author);
+            ((RadioButton) rgBookGroup.getChildAt(bookShelfBean.getGroup())).setChecked(true);
             if (mPresenter.getInBookShelf()) {
-                tvChapter.setText(getString(R.string.read_dur_progress, mPresenter.getBookShelf().getDurChapterName()));
-                tvShelf.setText("移出书架");
+                tvChapter.setText(bookShelfBean.getDurChapterName()); // last
+                tvShelf.setText(R.string.remove_from_bookshelf);
                 tvRead.setText("继续阅读");
+                setTvUpdate(bookShelfBean.getAllowUpdate(), true);
                 tvShelf.setOnClickListener(v -> {
                     //从书架移出
                     mPresenter.removeFromBookShelf();
                 });
             } else {
-                tvChapter.setText(getString(R.string.book_search_last, mPresenter.getBookShelf().getLastChapterName()));
+                setTvUpdate(false, false);
+                if (!TextUtils.isEmpty(bookShelfBean.getLastChapterName())) {
+                    tvChapter.setText(bookShelfBean.getLastChapterName()); // last
+                }
                 tvShelf.setText("放入书架");
                 tvRead.setText("开始阅读");
                 tvShelf.setOnClickListener(v -> {
@@ -144,40 +169,49 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
                     mPresenter.addToBookShelf();
                 });
             }
-            if (mPresenter.getBookShelf().getBookInfoBean().getIntroduce() != null) {
-                tvIntro.setText(mPresenter.getBookShelf().getBookInfoBean().getIntroduce());
+            if (bookInfoBean.getIntroduce() != null) {
+                tvIntro.setText(bookInfoBean.getIntroduce());
             }
             if (tvIntro.getVisibility() != View.VISIBLE) {
                 tvIntro.setVisibility(View.VISIBLE);
                 tvIntro.startAnimation(animShowInfo);
             }
-            if (mPresenter.getBookShelf().getBookInfoBean().getOrigin() != null && mPresenter.getBookShelf().getBookInfoBean().getOrigin().length() > 0) {
-                tvOrigin.setVisibility(View.VISIBLE);
-                tvOrigin.setText(getString(R.string.origin_format, mPresenter.getBookShelf().getBookInfoBean().getOrigin()));
+            String origin = bookInfoBean.getOrigin();
+            if (!TextUtils.isEmpty(origin)) {
+                ivWeb.setVisibility(View.VISIBLE);
+                tvOrigin.setText(origin);
             } else {
-                tvOrigin.setVisibility(View.GONE);
+                ivWeb.setVisibility(View.INVISIBLE);
+                tvOrigin.setVisibility(View.INVISIBLE);
             }
+            String customCoverPath = bookShelfBean.getCustomCoverPath();
+            coverUrl = bookInfoBean.getCoverUrl();
             if (!this.isFinishing()) {
-                if (TextUtils.isEmpty(mPresenter.getBookShelf().getCustomCoverPath())) {
-                    Glide.with(this).load(mPresenter.getBookShelf().getBookInfoBean().getCoverUrl())
+                if (TextUtils.isEmpty(customCoverPath)) {
+                    Glide.with(this).load(coverUrl)
                             .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
-                                    .placeholder(R.drawable.img_cover_default)).into(ivCover);
-                } else if (mPresenter.getBookShelf().getCustomCoverPath().startsWith("http")) {
-                    Glide.with(this).load(mPresenter.getBookShelf().getCustomCoverPath())
+                                    .placeholder(R.drawable.img_cover_default))
+                            .into(ivCover);
+                    Glide.with(this).load(coverUrl)
                             .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
-                                    .placeholder(R.drawable.img_cover_default)).into(ivCover);
+                                    .placeholder(R.drawable.img_cover_gs))
+                            .apply(RequestOptions.bitmapTransform(new BlurTransformation(25, 3)))
+                            .into(ivBlurCover);
+                } else if (customCoverPath.startsWith("http")) {
+                    Glide.with(this).load(customCoverPath)
+                            .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
+                                    .placeholder(R.drawable.img_cover_default))
+                            .into(ivCover);
+                    Glide.with(this).load(customCoverPath)
+                            .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
+                                    .placeholder(R.drawable.img_cover_gs))
+                            .apply(RequestOptions.bitmapTransform(new BlurTransformation(25, 3)))
+                            .into(ivBlurCover);
                 } else {
-                    ivCover.setImageBitmap(BitmapFactory.decodeFile(mPresenter.getBookShelf().getCustomCoverPath()));
+                    ivCover.setImageBitmap(BitmapFactory.decodeFile(customCoverPath));
                 }
-
-                Glide.with(this).load(mPresenter.getBookShelf().getCustomCoverPath())
-                        .apply(new RequestOptions()
-                                .dontAnimate()
-                                .diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
-                                .placeholder(R.drawable.img_cover_gs))
-                        .apply(RequestOptions.bitmapTransform(new BlurTransformation(25, 3)))
-                        .into(ivBlurCover);
             }
+            upChapterSizeTv();
         }
         tvLoading.startAnimation(animHideLoading);
         tvLoading.setOnClickListener(null);
@@ -194,6 +228,14 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
         });
     }
 
+    private void setTvUpdate(boolean update, boolean show) {
+        tvUpdate.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (show) {
+            tvUpdate.setText(update ? R.string.allow_update : R.string.disable_update);
+            tvUpdate.setTextColor(getResources().getColor(update ? R.color.white : R.color.darker_gray));
+        }
+    }
+
     @Override
     protected void firstRequest() {
         super.firstRequest();
@@ -203,37 +245,32 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
         }
     }
 
+    @SuppressLint("DefaultLocale")
+    private void upChapterSizeTv() {
+        if (bookShelfBean.getChapterListSize() > 0) {
+            tvChapterSize.setText(String.format("(%d)", bookShelfBean.getChapterListSize()));
+        } else {
+            tvChapterSize.setText("");
+        }
+    }
+
     private void initView() {
-        String coverUrl;
-        String customCoverPath = null;
-        String name;
-        String author;
+        for (int i = 0; i < 3; i++) {
+            ((RadioButton) rgBookGroup.getChildAt(i)).setText(BOOK_GROUPS[i].substring(0, 2));
+        }
         if (mPresenter.getOpenFrom() == FROM_BOOKSHELF) {
-            if (mPresenter.getBookShelf() == null) return;
-            coverUrl = mPresenter.getBookShelf().getBookInfoBean().getCoverUrl();
-            customCoverPath = mPresenter.getBookShelf().getCustomCoverPath();
-            name = mPresenter.getBookShelf().getBookInfoBean().getName();
-            author = mPresenter.getBookShelf().getBookInfoBean().getAuthor();
-            if (mPresenter.getBookShelf().getBookInfoBean().getOrigin() != null && mPresenter.getBookShelf().getBookInfoBean().getOrigin().length() > 0) {
-                tvOrigin.setVisibility(View.VISIBLE);
-                tvOrigin.setText(getString(R.string.origin_format, mPresenter.getBookShelf().getBookInfoBean().getOrigin()));
-            } else {
-                tvOrigin.setVisibility(View.GONE);
-            }
             updateView();
         } else {
             if (mPresenter.getSearchBook() == null) return;
-            coverUrl = mPresenter.getSearchBook().getCoverUrl();
-            name = mPresenter.getSearchBook().getName();
-            author = mPresenter.getSearchBook().getAuthor();
-            if (mPresenter.getSearchBook().getOrigin() != null && mPresenter.getSearchBook().getOrigin().length() > 0) {
-                tvOrigin.setVisibility(View.VISIBLE);
-                tvOrigin.setText(getString(R.string.origin_format, mPresenter.getSearchBook().getOrigin()));
-            } else {
-                tvOrigin.setVisibility(View.GONE);
-            }
-            tvChapter.setText(getString(R.string.book_search_last, mPresenter.getSearchBook().getLastChapter()));
-            tvIntro.setText(mPresenter.getSearchBook().getIntroduce());
+            SearchBookBean searchBookBean = mPresenter.getSearchBook();
+            coverUrl = searchBookBean.getCoverUrl();
+            tvName.setText(searchBookBean.getName());
+            author = searchBookBean.getAuthor();
+            tvAuthor.setText(TextUtils.isEmpty(author) ? "未知" : author);
+            String origin = TextUtils.isEmpty(searchBookBean.getOrigin()) ? "未知" : searchBookBean.getOrigin();
+            tvOrigin.setText(origin);
+            tvChapter.setText(searchBookBean.getLastChapter());  // newest
+            tvIntro.setText(searchBookBean.getIntroduce());
             tvShelf.setText("放入书架");
             tvRead.setText("开始阅读");
             tvRead.setOnClickListener(v -> {
@@ -243,30 +280,18 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
             tvLoading.setVisibility(View.VISIBLE);
             tvLoading.setText("加载中...");
             tvLoading.setOnClickListener(null);
-        }
-        if (!this.isFinishing()) {
-            if (TextUtils.isEmpty(customCoverPath)) {
+            setTvUpdate(false, false);
+            if (!this.isFinishing()) {
                 Glide.with(this).load(coverUrl)
                         .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
                                 .placeholder(R.drawable.img_cover_default)).into(ivCover);
-            } else if (customCoverPath.startsWith("http")) {
-                Glide.with(this).load(customCoverPath)
-                        .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
-                                .placeholder(R.drawable.img_cover_default)).into(ivCover);
-            } else {
-                ivCover.setImageBitmap(BitmapFactory.decodeFile(customCoverPath));
             }
-
             Glide.with(this).load(coverUrl)
-                    .apply(new RequestOptions()
-                            .dontAnimate()
-                            .diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
+                    .apply(new RequestOptions().dontAnimate().diskCacheStrategy(DiskCacheStrategy.RESOURCE).centerCrop()
                             .placeholder(R.drawable.img_cover_gs))
                     .apply(RequestOptions.bitmapTransform(new BlurTransformation(25, 3)))
                     .into(ivBlurCover);
         }
-        tvName.setText(name);
-        tvAuthor.setText(author);
     }
 
     @Override
@@ -285,13 +310,10 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
             }
         });
 
-        tvGroup.setOnClickListener(view -> {
-            if (mPresenter.getBookShelf().getGroup() == 0) {
-                mPresenter.getBookShelf().setGroup(1);
-            } else {
-                mPresenter.getBookShelf().setGroup(0);
-            }
-            tvGroup.setText(BookshelfHelp.getGroupName(this, mPresenter.getBookShelf().getGroup()));
+        tvUpdate.setOnClickListener(view -> {
+            boolean update = !mPresenter.getBookShelf().getAllowUpdate();
+            mPresenter.getBookShelf().setAllowUpdate(update);
+            setTvUpdate(update, true);
             if (mPresenter.getInBookShelf()) {
                 mPresenter.addToBookShelf();
             }
@@ -299,7 +321,7 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
 
         tvChangeOrigin.setOnClickListener(view -> moProgressHUD.showChangeSource(this, mPresenter.getBookShelf(),
                 searchBookBean -> {
-                    tvOrigin.setText(getString(R.string.origin_format, searchBookBean.getOrigin()));
+                    tvOrigin.setText(searchBookBean.getOrigin());
                     tvLoading.setVisibility(View.VISIBLE);
                     tvLoading.setText("加载中...");
                     tvLoading.setOnClickListener(null);
@@ -359,12 +381,25 @@ public class BookDetailActivity extends MBaseActivity<BookDetailContract.Present
         });
 
         tvAuthor.setOnClickListener(view -> {
+            if (TextUtils.isEmpty(author)) return;
             if (!AppActivityManager.getInstance().isExist(SearchBookActivity.class)) {
-                SearchBookActivity.startByKey(this, tvAuthor.getText().toString());
+                SearchBookActivity.startByKey(this, author);
             } else {
-                RxBus.get().post(RxBusTag.SEARCH_BOOK, tvAuthor.getText().toString());
+                RxBus.get().post(RxBusTag.SEARCH_BOOK, author);
             }
             finish();
+        });
+
+        rgBookGroup.setOnCheckedChangeListener((radioGroup, i) -> {
+            View checkView = radioGroup.findViewById(i);
+            if (!checkView.isPressed()) {
+                return;
+            }
+            int idx = radioGroup.indexOfChild(checkView) % BOOK_GROUPS.length;
+            mPresenter.getBookShelf().setGroup(idx);
+            if (mPresenter.getInBookShelf()) {
+                mPresenter.addToBookShelf();
+            }
         });
     }
 

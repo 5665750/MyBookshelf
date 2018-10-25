@@ -13,7 +13,6 @@ import com.victor.loading.rotate.RotateLoading;
 
 import ru.noties.markwon.Markwon;
 
-
 /**
  * 对话框
  */
@@ -103,7 +102,6 @@ public class MoProgressView extends LinearLayout {
         removeAllViews();
         LayoutInflater.from(getContext()).inflate(R.layout.moprogress_dialog_markdown, this, true);
         TextView tvMarkdown = findViewById(R.id.tv_markdown);
-
         Markwon.setMarkdown(tvMarkdown, ReadAssets.getText(context, assetFileName));
     }
 

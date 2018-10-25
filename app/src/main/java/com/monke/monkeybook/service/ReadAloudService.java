@@ -20,6 +20,7 @@ import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
@@ -39,7 +40,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.text.TextUtils.isEmpty;
-import static com.monke.monkeybook.MApplication.DEBUG;
 
 /**
  * Created by GKF on 2018/1/2.
@@ -84,6 +84,7 @@ public class ReadAloudService extends Service {
     private BroadcastReceiver broadcastReceiver;
     private SharedPreferences preference;
     private int speechRate;
+    private String title;
     private String text;
 
     public ReadAloudService() {
@@ -152,7 +153,8 @@ public class ReadAloudService extends Service {
             stopSelf();
             return;
         }
-        this.text = String.format("%s(%s)", title, text);
+        this.text = text;
+        this.title = title;
         nowSpeak = 0;
         contentList.clear();
         String[] splitSpeech = content.split("\n");
@@ -337,19 +339,20 @@ public class ReadAloudService extends Service {
     private void updateNotification() {
         if (text == null)
             text = getString(R.string.read_aloud_s);
-        String title;
+        String nTitle;
         if (pause) {
-            title = getString(R.string.read_aloud_pause);
+            nTitle = getString(R.string.read_aloud_pause);
         } else if (timeMinute > 0 && timeMinute <= 60) {
-            title = getString(R.string.read_aloud_timer, timeMinute);
+            nTitle = getString(R.string.read_aloud_timer, timeMinute);
         } else {
-            title = getString(R.string.read_aloud_t);
+            nTitle = getString(R.string.read_aloud_t);
         }
-        RxBus.get().post(RxBusTag.ALOUD_TIMER, title);
+        nTitle += ": " + title;
+        RxBus.get().post(RxBusTag.ALOUD_TIMER, nTitle);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, MApplication.channelIdReadAloud)
                 .setSmallIcon(R.drawable.ic_volume_up_black_24dp)
                 .setOngoing(true)
-                .setContentTitle(title)
+                .setContentTitle(nTitle)
                 .setContentText(text)
                 .setContentIntent(getReadBookActivityPendingIntent(ActionReadActivity));
         builder.addAction(R.drawable.ic_stop_black_24dp, getString(R.string.stop), getThisServicePendingIntent(ActionDoneService));
@@ -378,7 +381,7 @@ public class ReadAloudService extends Service {
         running = false;
         clearTTS();
         unRegisterMediaButton();
-        unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
     }
 
     private void clearTTS() {
@@ -458,7 +461,7 @@ public class ReadAloudService extends Service {
             }
         };
         IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-        registerReceiver(broadcastReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
     }
 
     private void updateMediaSessionPlaybackState() {
@@ -524,7 +527,6 @@ public class ReadAloudService extends Service {
     class AudioFocusChangeListener implements AudioManager.OnAudioFocusChangeListener {
         @Override
         public void onAudioFocusChange(int focusChange) {
-            if (DEBUG) Log.v(TAG, "focusChange: " + focusChange);
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_GAIN:
                     // 重新获得焦点,  可做恢复播放，恢复后台音量的操作

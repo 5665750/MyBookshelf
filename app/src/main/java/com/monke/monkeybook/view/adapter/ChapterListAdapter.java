@@ -1,7 +1,6 @@
 //Copyright (c) 2017. 章钦豪. All rights reserved.
 package com.monke.monkeybook.view.adapter;
 
-import android.graphics.Typeface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -108,9 +107,11 @@ public class ChapterListAdapter extends RecyclerView.Adapter<ChapterListAdapter.
             ChapterListBean chapterListBean = isSearch ? chapterListBeans.get(position) : bookShelfBean.getChapterList(position);
             holder.tvName.setText(chapterListBean.getDurChapterName());
             if (Objects.equals(bookShelfBean.getTag(), BookShelfBean.LOCAL_TAG) || BookshelfHelp.isChapterCached(bookShelfBean.getBookInfoBean(), chapterListBean)) {
-                holder.tvName.setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
+                holder.tvName.setSelected(true);
+                holder.tvName.getPaint().setFakeBoldText(true);
             } else {
-                holder.tvName.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
+                holder.tvName.setSelected(false);
+                holder.tvName.getPaint().setFakeBoldText(false);
             }
             holder.flContent.setOnClickListener(v -> {
                 setIndex(position);
